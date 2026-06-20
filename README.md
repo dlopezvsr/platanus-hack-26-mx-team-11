@@ -15,7 +15,7 @@ team-11
 
 ## Product flows
 
-See [docs/FLOWS.md](docs/FLOWS.md) for ASCII mockups and descriptions of the CTO setup flows, vibe coder onboarding flow, team invite flow, role/rule configuration, and what happens during vibecoding.
+See [docs/FLOWS.md](docs/FLOWS.md) for ASCII mockups and descriptions of the CTO setup flows, vibe coder onboarding flow, team invite flow, and role/rule configuration.
 
 Before Submitting:
 
