@@ -1,0 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --ui: 'Space Grotesk', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: #0B0F14; }
+button { font-family: var(--ui); }
+
+.cs-row:hover { background: #16202C !important; }
+
+.cs-live { animation: csBlink 1.4s ease-in-out infinite; }
+@keyframes csBlink { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+
+.cs-radar::before, .cs-radar::after {
+  content: ''; position: absolute; inset: -2px; border-radius: 50%;
+  border: 2px solid #34E5D0; opacity: 0; animation: csPulse 2.6s ease-out infinite;
+}
+.cs-radar::after { animation-delay: 1.3s; }
+@keyframes csPulse { 0% { transform: scale(1); opacity: .7; } 100% { transform: scale(2.1); opacity: 0; } }
+
+.cs-event { animation: csSlide .4s ease both; }
+@keyframes csSlide { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+.cs-flag { animation: csFlag .45s cubic-bezier(.2,.9,.3,1) both; }
+@keyframes csFlag { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: scale(1); } }
+
+.cs-meter { height: 100%; transition: width .7s ease, background .5s; }
+
+@media (max-width: 720px) {
+  .cs-left { width: 100% !important; }
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #1E2A38; border-radius: 4px; }
