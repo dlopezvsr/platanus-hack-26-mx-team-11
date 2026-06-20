@@ -16,6 +16,7 @@ Real-time monitoring, risk detection, and protection for non-technical employees
 - [Architecture](#architecture)
 - [Data Model](#data-model)
 - [Ingestion Pipeline](#ingestion-pipeline)
+- [Product Flows](#product-flows)
 - [Tech Stack](#tech-stack)
 - [Repository Layout](#repository-layout)
 - [Getting Started](#getting-started)
@@ -177,6 +178,12 @@ export interface Policy {
 3. **Analyze** — The risk engine runs deterministic rules first (fast, cheap), then escalates ambiguous cases to an LLM judge for scoring and explanation.
 4. **Persist** — Events and their `RiskFlag`s are written to PostgreSQL; session `riskScore` is recomputed.
 5. **Push** — Updates stream to the admin dashboard in real time via Pusher / Vercel KV.
+
+---
+
+## Product Flows
+
+See [docs/FLOWS.md](docs/FLOWS.md) for ASCII mockups and descriptions of the CTO setup flows, vibe coder onboarding flow, team invite flow, role/rule configuration, and what happens during vibecoding.
 
 ---
 
