@@ -1,4 +1,4 @@
-# CodeSentinel — Claude Code Integration (PoC)
+# Sentinel — Claude Code Integration (PoC)
 
 How a user's Claude Code session starts showing up in your admin console.
 No executable, no SDK — two native Claude Code hooks pointed at your endpoint.

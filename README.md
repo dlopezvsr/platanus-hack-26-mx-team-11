@@ -1,29 +1,32 @@
-# CodeSentinel
+# Sentinel
 
-<img src="./project-logo.png" alt="CodeSentinel logo" width="140" />
+<img src="./project-logo.png" alt="Sentinel logo" width="140" />
 
-CodeSentinel ayuda a equipos a adoptar Claude Code de forma segura. Observa sesiones de coding de miembros no técnicos, aplica políticas como "no tocar producción" o "no escribir secretos en el código", y muestra riesgos en un dashboard.
+Sentinel es una capa de seguridad para equipos que usan Claude Code con miembros no técnicos. El equipo técnico define políticas para evitar riesgos como que se filtren datos sensibles, y Sentinel interviene cuando una sesión se sale de esos límites. Los miembros siguen construyendo con el agente, mientras el dashboard muestra actividad, decisiones y alertas en tiempo real.
+
+## Demo
+
+https://platanus-hack-26-mx-team-11.vercel.app/
 
 ## Cómo funciona
 
-Un CTO invita miembros no técnicos, los organiza en grupos y les comparte un comando de instalación para Claude Code. Ese comando conecta Claude Code con CodeSentinel y deja instalado un guard local que revisa las acciones antes de ejecutarlas.
+Para el miembro no técnico, Sentinel casi no cambia el flujo: instala una configuración de Claude Code y sigue construyendo con el agente. Si pide algo riesgoso, Sentinel puede agregar contexto seguro, sugerir una versión más segura o bloquear la acción con una explicación.
+
+Para el equipo técnico, Sentinel funciona como una consola de control: el CTO invita miembros, los organiza en grupos, define políticas y revisa sesiones, riesgos y decisiones desde el dashboard.
 
 ```text
-Miembro + Claude Code
-        |
-        | hooks: UserPromptSubmit + PreToolUse
-        v
-CodeSentinel
-  - evalúa prompts antes del modelo
-  - consulta políticas actuales por grupo
-  - permite, pide aprobación o bloquea acciones
-  - registra sesiones, riesgos y decisiones
-        |
-        v
-Dashboard para CTO / seguridad
+Miembro no técnico + Claude Code
+          |
+          | prompts y tool calls
+          v
+Sentinel
+  - aplica políticas del grupo
+  - guía o bloquea acciones riesgosas
+  - registra sesiones y decisiones
+          |
+          v
+Dashboard para CTO / equipo técnico
 ```
-
-En prompts riesgosos, CodeSentinel puede inyectar contexto seguro para guiar al agente, sugerir una versión segura de la intención o bloquear la solicitud. En tool calls, el guard consulta las políticas vigentes del miembro antes de ejecutar y devuelve una decisión de permitir, pedir aprobación o denegar acciones como tocar producción o escribir secretos en el código.
 
 ## Qué incluye
 
@@ -45,10 +48,6 @@ La app corre en modo demo sin Supabase. Con Supabase y Anthropic configurados, h
 ## Stack
 
 Next.js, React, TypeScript, Supabase y Anthropic Claude.
-
-## Docs
-
-Arquitectura, base de datos, auth, onboarding, políticas y deploy están en [`docs/`](docs/).
 
 ## Equipo
 

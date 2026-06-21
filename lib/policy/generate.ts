@@ -1,6 +1,6 @@
 /**
  * Generate the `~/.claude/settings.json` an agent needs to be governed by
- * CodeSentinel: the declarative permission rules from the selected policies plus
+ * Sentinel: the declarative permission rules from the selected policies plus
  * the hooks that (a) review each request before it runs and (b) stream activity
  * to the console for observability.
  */
@@ -44,7 +44,7 @@ function authHeader(auth: AuthConfig): string {
     : `Authorization: Bearer $${auth.envVar}`;
 }
 
-/** A curl one-liner that POSTs the hook's stdin JSON to a CodeSentinel route. */
+/** A curl one-liner that POSTs the hook's stdin JSON to a Sentinel route. */
 function post(endpoint: string, path: string, auth: AuthConfig): ClaudeHook {
   const url = `${endpoint.replace(/\/$/, "")}${path}`;
   return {
@@ -96,7 +96,7 @@ export function buildGuardScript(endpoint: string, auth: AuthConfig): string {
   const tokenLine =
     auth.kind === "token" ? `TOKEN="${auth.token}"` : `TOKEN="$${auth.envVar}"`;
   return `#!/bin/sh
-# CodeSentinel live policy guard. Runs on every Claude Code tool call (PreToolUse).
+# Sentinel live policy guard. Runs on every Claude Code tool call (PreToolUse).
 # It fetches your CURRENT policies from the server and enforces them — so changes
 # your admin makes apply immediately, with no re-install. Safe to inspect.
 ${tokenLine}

@@ -39,7 +39,7 @@ export async function POST(req: Request) {
   if (evaluation.decision === "blocked") {
     return NextResponse.json({
       decision: "block",
-      reason: `CodeSentinel blocked this request. ${evaluation.reason ?? ""}`.trim(),
+      reason: `Sentinel blocked this request. ${evaluation.reason ?? ""}`.trim(),
     });
   }
   return NextResponse.json(passThrough(evaluation.injectedContext));

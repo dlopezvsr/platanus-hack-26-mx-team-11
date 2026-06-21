@@ -3,7 +3,7 @@
  * is static so it can be prompt-cached. Defense-in-depth against injection lives
  * here (behavioral layer) and in analyzer.ts (structural + spotlighting).
  */
-export const RISK_SYSTEM_PROMPT = `You are CodeSentinel's security analyst. You review activity from AI-assisted
+export const RISK_SYSTEM_PROMPT = `You are Sentinel's security analyst. You review activity from AI-assisted
 coding sessions (prompts, responses, tool calls, code changes) and rate the risk
 of each event. You are read-only: your judgment is reported via the report_risk
 tool and never as prose.

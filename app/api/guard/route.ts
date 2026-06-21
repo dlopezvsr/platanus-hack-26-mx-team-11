@@ -34,12 +34,12 @@ export async function POST(req: Request) {
 
   if (decision === "deny") {
     return NextResponse.json(
-      preToolUse("deny", `CodeSentinel blocked this: "${policy?.label}". ${policy?.correctionStrategy ?? ""}`.trim())
+      preToolUse("deny", `Sentinel blocked this: "${policy?.label}". ${policy?.correctionStrategy ?? ""}`.trim())
     );
   }
   if (decision === "ask") {
     return NextResponse.json(
-      preToolUse("ask", `CodeSentinel requires approval — policy "${policy?.label}".`)
+      preToolUse("ask", `Sentinel requires approval — policy "${policy?.label}".`)
     );
   }
   return NextResponse.json(allow());

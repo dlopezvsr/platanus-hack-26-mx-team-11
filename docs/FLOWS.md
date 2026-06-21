@@ -1,13 +1,13 @@
-# CodeSentinel Product Flows
+# Sentinel Product Flows
 
-This document maps the main user flows for CodeSentinel. It is written for team feedback, so some details are intentionally marked as assumptions.
+This document maps the main user flows for Sentinel. It is written for team feedback, so some details are intentionally marked as assumptions.
 
 ## Actors
 
 - **Vibe coder**: employee using an AI coding agent to build an internal tool.
-- **CTO / admin**: company owner or technical leader configuring CodeSentinel.
+- **CTO / admin**: company owner or technical leader configuring Sentinel.
 - **AI coding agent**: Claude Code, Cursor, Copilot, or another coding assistant.
-- **CodeSentinel**: product layer that observes sessions, applies rules, and shows risk in the dashboard.
+- **Sentinel**: product layer that observes sessions, applies rules, and shows risk in the dashboard.
 
 ## Flow 1: Vibe Coder Starts Vibecoding
 
@@ -17,7 +17,7 @@ Goal: a vibe coder lands on the product, logs in, connects a product link or pro
 +--------------------------------------------------------------+
 |                       LANDING PAGE                           |
 |                                                              |
-|  CodeSentinel                                                |
+|  Sentinel                                                |
 |  AI coding security for teams using vibe coding tools.       |
 |                                                              |
 |  [ Start vibecoding ]        [ CTO / Admin setup ]           |
@@ -48,7 +48,7 @@ Goal: a vibe coder lands on the product, logs in, connects a product link or pro
 |                                                              |
 |  [ Continue with Google / SSO ]                              |
 |                                                              |
-|  CodeSentinel will apply your company's AI coding rules.     |
+|  Sentinel will apply your company's AI coding rules.     |
 +------------------------------+-------------------------------+
                                |
                                v
@@ -59,7 +59,7 @@ Goal: a vibe coder lands on the product, logs in, connects a product link or pro
 |                                                              |
 |  "Build an internal refund dashboard using this product doc" |
 |                                                              |
-|  CodeSentinel watches:                                      |
+|  Sentinel watches:                                      |
 |  - user prompt                                               |
 |  - agent response                                            |
 |  - code changes                                              |
@@ -69,11 +69,11 @@ Goal: a vibe coder lands on the product, logs in, connects a product link or pro
 
 Description:
 
-The vibe coder starts from the landing page, provides a product link or project context, signs in, and begins a coding session. CodeSentinel sits around the agent session and uses the company's configured rules to evaluate prompts, generated code, and tool usage.
+The vibe coder starts from the landing page, provides a product link or project context, signs in, and begins a coding session. Sentinel sits around the agent session and uses the company's configured rules to evaluate prompts, generated code, and tool usage.
 
 Open question:
 
-- Does the product link get pasted into CodeSentinel first, or directly into the AI coding agent?
+- Does the product link get pasted into Sentinel first, or directly into the AI coding agent?
 
 ## Flow 2: CTO Creates Account
 
@@ -83,7 +83,7 @@ Goal: the CTO creates the company account and becomes the first admin.
 +--------------------------------------------------------------+
 |                       LANDING PAGE                           |
 |                                                              |
-|  CodeSentinel                                                |
+|  Sentinel                                                |
 |                                                              |
 |  [ Create company account ]                                  |
 +------------------------------+-------------------------------+
@@ -175,7 +175,7 @@ Goal: the CTO defines rules that decide what is risky during vibe coding.
 
 Description:
 
-The CTO can create global rules for the whole company, choose risk levels, and customize behavior. The rules become part of the policy context that CodeSentinel applies when analyzing a vibe coding session.
+The CTO can create global rules for the whole company, choose risk levels, and customize behavior. The rules become part of the policy context that Sentinel applies when analyzing a vibe coding session.
 
 ## Flow 4: CTO Adds Users
 
@@ -271,13 +271,13 @@ Goal: the CTO creates a reusable role and attaches rules to that role.
 |  Rules: 3 active                                             |
 |                                                              |
 |  New sessions from these users will include these rules      |
-|  inside the CodeSentinel policy context.                     |
+|  inside the Sentinel policy context.                     |
 +--------------------------------------------------------------+
 ```
 
 Description:
 
-The CTO creates roles that bundle rules and permissions. When a user with that role starts vibecoding, CodeSentinel uses those role rules to evaluate the session.
+The CTO creates roles that bundle rules and permissions. When a user with that role starts vibecoding, Sentinel uses those role rules to evaluate the session.
 
 ## Assumptions To Confirm
 
@@ -285,5 +285,5 @@ The CTO creates roles that bundle rules and permissions. When a user with that r
 - Rules can be global, role-specific, and user-specific.
 - Rules can either flag, warn, require approval, or block.
 - The vibe coder login happens before the AI coding session is tracked.
-- The product link can be used as session context for the AI agent and CodeSentinel.
+- The product link can be used as session context for the AI agent and Sentinel.
 - The dashboard should show both live sessions and historical session replay.

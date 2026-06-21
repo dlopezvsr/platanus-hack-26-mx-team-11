@@ -1,4 +1,4 @@
-# CodeSentinel — Governance & Pre-Request Enforcement Spec
+# Sentinel — Governance & Pre-Request Enforcement Spec
 
 > Product spec for the governance feature: predefined policies, organization +
 > group scoping, and **pre-request** correction/blocking before a request reaches
@@ -19,7 +19,7 @@ shows risk. Enforcement is limited to declarative `settings.json` rules and an
 optional `PreToolUse` deny (`CS_BLOCK_CRITICAL`).
 
 This spec adds the product's headline capability: **intercept-before**. Before a
-vibe coder's request reaches the agent, CodeSentinel evaluates it against the
+vibe coder's request reaches the agent, Sentinel evaluates it against the
 user's effective policies and either **enriches**, **reformulates**, or **blocks**
 it — so the agent does the safe thing from the start, with minimal friction.
 
@@ -47,10 +47,10 @@ managed settings) remain as defense-in-depth fallbacks.
 
 | Actor | Role in the system |
 |---|---|
-| **Vibe coder** | Non-technical employee using an AI agent. Never configures policy. Experiences CodeSentinel only as occasional inline notes or blocks. |
+| **Vibe coder** | Non-technical employee using an AI agent. Never configures policy. Experiences Sentinel only as occasional inline notes or blocks. |
 | **CTO / Admin** | Configures groups, invites users, attaches Library policies, reviews events. Not assumed to be a security specialist. |
 | **AI coding agent** | Claude Code (v1 target), Cursor, Copilot. Receives the enriched/safe request + injected constraints. |
-| **CodeSentinel** | Governance layer: resolves effective policies, evaluates each request pre-send, records every decision. |
+| **Sentinel** | Governance layer: resolves effective policies, evaluates each request pre-send, records every decision. |
 
 ---
 
@@ -137,7 +137,7 @@ all risky policies** becomes the request's decision.
 
 ```
 1. Vibe coder writes a request.
-2. CodeSentinel UserPromptSubmit hook fires BEFORE the agent processes it.
+2. Sentinel UserPromptSubmit hook fires BEFORE the agent processes it.
 3. Identify the user (bearer token → member) and resolve effective policies.
 4. Evaluator (LLM analyst, reusing lib/risk/) checks the request against each
    policy's detection signals. Output per policy: { atRisk, action, why }.
@@ -269,7 +269,7 @@ The global set applied to everyone. Same picker UX as a group, scope = org.
 ### 7.6 Vibe coder — no dedicated UI
 
 Their entire experience is: occasional inline "(adjusted for safety: …)" note from
-the agent, or a block message with a safe alternative. No CodeSentinel dashboard,
+the agent, or a block message with a safe alternative. No Sentinel dashboard,
 no approval prompts, no config. This is the friction budget.
 
 ---

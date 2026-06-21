@@ -70,7 +70,7 @@ function assemble(raw: RawEval, policies: Policy[]): RequestEvaluation {
   // Always inject the mandatory constraints from the policies in play.
   const instructionSources = fired.length ? fired : policies;
   if (instructionSources.length) {
-    lines.push("CodeSentinel governance — mandatory constraints for this request:");
+    lines.push("Sentinel governance — mandatory constraints for this request:");
     for (const p of instructionSources) lines.push(`- ${p.promptInstructions}`);
   }
   if (decision === "corrected" && raw.safeRequest) {
@@ -115,7 +115,7 @@ const DECIDE_TOOL: Anthropic.Tool = {
   },
 };
 
-const SYSTEM = `You are CodeSentinel's pre-request governor. A non-technical user
+const SYSTEM = `You are Sentinel's pre-request governor. A non-technical user
 ("vibe coder") sends a request to a coding agent. Before it reaches the agent, you
 decide how to handle it under the user's effective policies. Your priority is LOW
 FRICTION: preserve the user's useful intent whenever it can be done safely.
