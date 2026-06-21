@@ -188,14 +188,30 @@ async function evaluateWithLLM(request: string, policies: Policy[]): Promise<Raw
 // ── Heuristic path (no API key) ────────────────────────────────────────────────
 /** Lightweight keyword signals per policy, for the no-API-key demo path. */
 const SIGNALS: Record<string, RegExp> = {
-  "prevent-pii-export": /\b(export|download|dump|csv|spreadsheet)\b.*\b(email|customer|user|pii|personal)\b|\b(email|customer)\b.*\b(export|csv)\b/i,
-  "no-production-access": /\b(prod|production|live)\b.*\b(db|database|crm|credential|connect|migrat)|\bproduction\b/i,
-  "prevent-secrets": /\b(api[_\s-]?key|secret|token|password|credential)\b.*\b(hardcode|in (the )?(code|repo|config|source)|commit)|hardcode.*key/i,
-  "approved-apis-only": /\b(integrate|connect|use)\b.*\b(api|sdk|webhook|third[- ]party|external)\b/i,
-  "public-publish-approval": /\b(deploy|publish|go live|make .* public|release)\b/i,
-  "prompt-injection-protection": /\bignore (all|previous|the) (rules|instructions|policies)|disregard .* (policy|safety)/i,
-  "no-destructive-commands": /\brm\s+-rf|drop\s+table|truncate|force[- ]push|git push --force|delete (all|everything)/i,
-  "approve-installs": /\b(npm install|pip install|pnpm add|add (a )?dependency|install (the )?package)\b/i,
+  "prevent-pii-export":
+    /\b(export|download|dump|csv|spreadsheet|share|send|forward|mandar|enviar|compartir)\b.{0,60}\b(email|customer|user|cliente|usuario|pii|personal|reporte|report|datos|data)\b|\b(vendor|proveedor|agencia|agency|tercero|third.?party)\b.{0,40}\b(datos|data|reporte|report|file|archivo)\b/i,
+  "no-production-access":
+    /\b(prod|production|live)\b.*\b(db|database|crm|credential|connect|migrat)|\bproduction\b/i,
+  "prevent-secrets":
+    /\b(api[_\s-]?key|secret|token|password|credential)\b.*\b(hardcode|in (the )?(code|repo|config|source)|commit)|hardcode.*key/i,
+  "approved-apis-only":
+    /\b(integrate|connect|use)\b.*\b(api|sdk|webhook|third[- ]party|external)\b/i,
+  "public-publish-approval":
+    /\b(deploy|publish|go live|make .* public|release)\b/i,
+  "prompt-injection-protection":
+    /\bignore (all|previous|the) (rules|instructions|policies)|disregard .* (policy|safety)/i,
+  "no-destructive-commands":
+    /\brm\s+-rf|drop\s+table|truncate|force[- ]push|git push --force|delete (all|everything)/i,
+  "approve-installs":
+    /\b(npm install|pip install|pnpm add|add (a )?dependency|install (the )?package)\b/i,
+  "internal-apps-private-by-default":
+    /\b(haz|crea|build|create|make|develop|construye)\b.{0,50}\b(app|aplicaci[oó]n|tool|herramienta|dashboard|portal|sistema|system|form|formulario)\b.{0,60}\b(interno|internal|equipo|team|departamento|department)\b|\b(internal|interna|equipo|team)\b.{0,40}\b(app|tool|system|portal|dashboard)\b/i,
+  "document-content-untrusted":
+    /\b(lee|read|process|procesa|parse|analiza|analyze|sigue|follow|ejecuta|run)\b.{0,60}\b(document|documento|archivo|file|url|p[aá]gina|page|email|correo|pdf|spreadsheet|hoja)\b.{0,60}\b(instrucciones|instructions|commands|actions|steps|pasos)\b|\b(instrucciones (del|en el|dentro del)|instructions (in|from|inside) the)\b.{0,40}\b(document|documento|file|archivo|email|correo)\b/i,
+  "no-direct-customer-outreach":
+    /\b(send|env[íi]a|manda|notif|email|mensaje|message|blast|broadcast)\b.{0,60}\b(customer|cliente|user|usuario|all|todos|list|lista|leads?|subscribers?|suscriptores?)\b|\b(masivo|masiva|campaign|campa[ñn]a|bulk.?email|mass.?message)\b/i,
+  "data-minimum-scope":
+    /\bSELECT\s+\*|\ball (the )?(customer|user|client|record|dato|registro)s?\b.{0,40}\b(data|information|info|fields?|columns?)\b|\b(full|complete|entire|completo|toda la)\b.{0,30}\b(table|database|dataset|tabla|base de datos)\b/i,
 };
 
 function evaluateHeuristically(request: string, policies: Policy[]): RawEval {
