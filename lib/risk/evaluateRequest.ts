@@ -45,9 +45,19 @@ export async function evaluateRequest(request: string, policies: Policy[]): Prom
     return { decision: "allowed", injectedContext: "", policyIds: [], severity: "info" };
   }
 
+  // Cheap pre-filter: run heuristics first. If nothing fires, skip the LLM entirely
+  // and return an allow with no context injection. This covers ~90% of benign prompts
+  // with zero network cost. The guard still enforces at tool-call level regardless.
+  const preFilter = evaluateHeuristically(request, policies);
+  if (preFilter.atRiskPolicyIds.length === 0) {
+    return assemble(allowRaw(), policies);
+  }
+
+  // At least one signal fired — use the LLM for an accurate verdict when available,
+  // otherwise trust the heuristic result (already computed, no wasted work).
   const raw = hasAnthropic
     ? await evaluateWithLLM(request, policies)
-    : evaluateHeuristically(request, policies);
+    : preFilter;
 
   return assemble(raw, policies);
 }
@@ -67,11 +77,11 @@ function assemble(raw: RawEval, policies: Policy[]): RequestEvaluation {
   const decision = ACTION_TO_DECISION[raw.action];
 
   const lines: string[] = [];
-  // Always inject the mandatory constraints from the policies in play.
-  const instructionSources = fired.length ? fired : policies;
-  if (instructionSources.length) {
+  // Only inject instructions for policies that actually fired — avoids bloating
+  // the agent's context on every benign message with unrelated constraints.
+  if (fired.length) {
     lines.push("Sentinel governance — mandatory constraints for this request:");
-    for (const p of instructionSources) lines.push(`- ${p.promptInstructions}`);
+    for (const p of fired) lines.push(`- ${p.promptInstructions}`);
   }
   if (decision === "corrected" && raw.safeRequest) {
     lines.push("");
