@@ -9,7 +9,7 @@ import type { MemberView } from "@/lib/repo/members";
 import type { GroupView } from "@/lib/repo/groups";
 import { ROLES, roleById } from "@/lib/policy/roles";
 import { POLICIES } from "@/lib/policy/catalog";
-import { buildSettings, resolvePolicies } from "@/lib/policy/generate";
+import { buildSettings, buildGuardScript, resolvePolicies } from "@/lib/policy/generate";
 import { addMember, regenerateToken, removeMember, setMember, type TeamActionState } from "@/app/dashboard/team/actions";
 
 export function TeamManager({
@@ -236,7 +236,7 @@ function Onboarding({
   name: string;
   onClose: () => void;
 }) {
-  const [copied, setCopied] = useState<"cmd" | "json" | null>(null);
+  const [copied, setCopied] = useState<"cmd" | "json" | "guard" | null>(null);
   const command = `curl -fsSL ${origin}/api/install/${token} | sh`;
   const json = useMemo(
     () =>
@@ -247,8 +247,9 @@ function Onboarding({
       ),
     [origin, token, policyIds]
   );
+  const guard = useMemo(() => buildGuardScript(origin, { kind: "token", token }), [origin, token]);
 
-  async function copy(text: string, which: "cmd" | "json") {
+  async function copy(text: string, which: "cmd" | "json" | "guard") {
     await navigator.clipboard.writeText(text);
     setCopied(which);
     setTimeout(() => setCopied((c) => (c === which ? null : c)), 1500);
@@ -271,12 +272,19 @@ function Onboarding({
           <button onClick={() => copy(command, "cmd")} style={st.copyBtn}>{copied === "cmd" ? "✓" : "Copy"}</button>
         </div>
 
-        <div style={st.label}>2 · Or paste manually into ~/.claude/settings.json</div>
+        <div style={st.label}>2 · Or set up manually — a · paste into ~/.claude/settings.json</div>
         <div style={st.jsonHead}>
-          <span style={st.jsonHint}>hooks + this member's policies</span>
+          <span style={st.jsonHint}>hooks (the PreToolUse guard + observability)</span>
           <button onClick={() => copy(json, "json")} style={st.copyBtn}>{copied === "json" ? "✓ Copied" : "Copy JSON"}</button>
         </div>
         <pre style={st.json}>{json}</pre>
+
+        <div style={st.label}>b · save the live policy guard to ~/.claude/codesentinel-guard.sh</div>
+        <div style={st.jsonHead}>
+          <span style={st.jsonHint}>then run: chmod +x ~/.claude/codesentinel-guard.sh</span>
+          <button onClick={() => copy(guard, "guard")} style={st.copyBtn}>{copied === "guard" ? "✓ Copied" : "Copy script"}</button>
+        </div>
+        <pre style={st.json}>{guard}</pre>
       </div>
     </div>
   );
