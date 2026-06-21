@@ -1,1 +1,3 @@
-Put your project description in markdown here. It will render under your project voting page. See as reference [Platanus Hack 26: Buenos Aires voting page](https://hack.platan.us/26-ar/vote).
+# CodeSentinel
+
+CodeSentinel ayuda a los equipos a adoptar agentes de programación con IA de forma segura, observando sesiones de coding de miembros no técnicos, analizando prompts y acciones riesgosas, y detectando problemas como secretos expuestos, acceso a producción, comandos destructivos, dependencias inseguras y prompt injection. Le da a CTOs y equipos de seguridad un dashboard en vivo con reglas simples, para que los empleados puedan avanzar rápido con herramientas de IA sin convertir cada app interna vibe-coded en un punto ciego de seguridad.
