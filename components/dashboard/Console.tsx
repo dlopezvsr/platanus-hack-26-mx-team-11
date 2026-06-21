@@ -41,6 +41,7 @@ export function Console({ viewer }: { viewer?: ConsoleViewer | null }) {
           <span style={st.brandSub}>Security console</span>
         </div>
         <div style={st.headRight}>
+          <Link href="/dashboard/groups" style={st.navLink}>Groups</Link>
           <Link href="/dashboard/team" style={st.navLink}>Team</Link>
           <Link href="/policies" style={st.navLink}>Policy Studio</Link>
           <div style={st.clock}>

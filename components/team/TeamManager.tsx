@@ -46,7 +46,10 @@ export function TeamManager({
             <div style={st.sub}>Add members, assign a role &amp; policies, hand them their setup.</div>
           </div>
         </div>
-        <Link href="/dashboard" style={st.navLink}>← Console</Link>
+        <div style={{ display: "flex", gap: 16 }}>
+          <Link href="/dashboard/groups" style={st.navLink}>Groups</Link>
+          <Link href="/dashboard" style={st.navLink}>← Console</Link>
+        </div>
       </header>
 
       {!configured && (
