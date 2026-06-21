@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { createServerSupabase } from "@/lib/db/supabase/server";
 import { getViewer } from "@/lib/auth/session";
 import { generateToken, hashToken, tokenPrefix } from "@/lib/auth/tokens";
-import { roleById } from "@/lib/policy/roles";
 
 export interface NewMember {
   memberId: string;
@@ -19,14 +18,31 @@ export interface TeamActionState {
   created?: NewMember;
 }
 
-/** Add a tracked member and mint their first token. */
+/** Add a tracked member, assign them to a group, and mint their first token. */
 export async function addMember(_prev: TeamActionState, form: FormData): Promise<TeamActionState> {
   const viewer = await getViewer();
   if (!viewer) return { error: "Not signed in." };
 
-  const roleId = String(form.get("role_id") || "engineering");
-  const policyIds = roleById(roleId)?.policyIds ?? [];
+  const groupId = String(form.get("group_id") || "").trim();
   const supabase = await createServerSupabase();
+
+  // Resolve the chosen group's name + effective policies (org-wide ∪ group).
+  let team = "";
+  let policyIds: string[] = [];
+  if (groupId) {
+    const [{ data: group }, { data: assignments }] = await Promise.all([
+      supabase.from("groups").select("name").eq("id", groupId).eq("org_id", viewer.orgId).single(),
+      supabase
+        .from("policy_assignments")
+        .select("policy_id")
+        .eq("org_id", viewer.orgId)
+        .eq("enabled", true)
+        .or(`scope.eq.org,group_id.eq.${groupId}`),
+    ]);
+    if (!group) return { error: "Selected group no longer exists." };
+    team = group.name;
+    policyIds = [...new Set((assignments ?? []).map((a: { policy_id: string }) => a.policy_id))];
+  }
 
   const { data: member, error } = await supabase
     .from("members")
@@ -34,17 +50,22 @@ export async function addMember(_prev: TeamActionState, form: FormData): Promise
       org_id: viewer.orgId,
       full_name: String(form.get("full_name") || "").trim(),
       email: String(form.get("email") || "").trim(),
-      team: String(form.get("team") || "").trim(),
-      role_id: roleId,
+      team,
+      role_id: "engineering",
       policy_ids: policyIds,
     })
     .select("id, full_name")
     .single();
   if (error || !member) return { error: error?.message ?? "Could not add member." };
 
+  if (groupId) {
+    await supabase.from("group_members").insert({ org_id: viewer.orgId, group_id: groupId, member_id: member.id });
+  }
+
   const token = await mintToken(member.id, viewer.orgId);
   revalidatePath("/dashboard/team");
-  return { created: { memberId: member.id, name: member.full_name, roleId, policyIds, token } };
+  revalidatePath("/dashboard/groups");
+  return { created: { memberId: member.id, name: member.full_name, roleId: "engineering", policyIds, token } };
 }
 
 /** Change a member's role and/or policy selection. */

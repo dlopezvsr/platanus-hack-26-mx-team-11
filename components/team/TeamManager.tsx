@@ -6,6 +6,7 @@ import { useActionState, useEffect, useMemo, useState, useTransition, type CSSPr
 import { Brand } from "@/components/ui/Brand";
 import { C } from "@/components/dashboard/theme";
 import type { MemberView } from "@/lib/repo/members";
+import type { GroupView } from "@/lib/repo/groups";
 import { ROLES, roleById } from "@/lib/policy/roles";
 import { POLICIES } from "@/lib/policy/catalog";
 import { buildSettings, resolvePolicies } from "@/lib/policy/generate";
@@ -13,10 +14,12 @@ import { addMember, regenerateToken, removeMember, setMember, type TeamActionSta
 
 export function TeamManager({
   members,
+  groups,
   origin,
   configured,
 }: {
   members: MemberView[];
+  groups: GroupView[];
   origin: string;
   configured: boolean;
 }) {
@@ -65,14 +68,17 @@ export function TeamManager({
           <form action={formAction} style={st.addForm}>
             <input name="full_name" placeholder="Full name" required style={st.input} />
             <input name="email" type="email" placeholder="Email" required style={st.input} />
-            <input name="team" placeholder="Team (e.g. Finance)" style={st.input} />
-            <select name="role_id" defaultValue="engineering" style={st.input}>
-              {ROLES.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
+            <select name="group_id" defaultValue="" disabled={groups.length === 0} style={st.input} title="Assign to a group">
+              <option value="">No group</option>
+              {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
             </select>
             <button type="submit" disabled={adding || !configured} style={{ ...st.addBtn, opacity: adding || !configured ? 0.55 : 1 }}>
               {adding ? <><Spinner /> Adding…</> : "Add member"}
             </button>
           </form>
+          {groups.length === 0 && (
+            <div style={st.hint}>No groups yet — <Link href="/dashboard/groups" style={st.hintLink}>create one</Link> to assign members and their policies.</div>
+          )}
           {state.error && <div style={st.err}>{state.error}</div>}
         </section>
 
@@ -288,7 +294,9 @@ const st: Record<string, CSSProperties> = {
 
   addCard: { background: C.panel, border: `1px solid ${C.border}`, borderRadius: 14, padding: "16px 18px" },
   cardHead: { fontSize: 12, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 13 },
-  addForm: { display: "grid", gridTemplateColumns: "1.2fr 1.4fr 1fr 1fr auto", gap: 9, alignItems: "center" },
+  addForm: { display: "grid", gridTemplateColumns: "1.3fr 1.6fr 1fr auto", gap: 9, alignItems: "center" },
+  hint: { marginTop: 10, fontSize: 12.5, color: C.faint },
+  hintLink: { color: C.accent, textDecoration: "none", fontWeight: 600 },
   input: { background: C.bg, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8, padding: "9px 11px", fontSize: 13, fontFamily: "var(--ui)", outline: "none", minWidth: 0 },
   addBtn: { background: C.accent, color: C.accentInk, border: "none", borderRadius: 8, padding: "9px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", fontFamily: "var(--ui)" },
   err: { marginTop: 10, fontSize: 12.5, color: "#FF8088" },
