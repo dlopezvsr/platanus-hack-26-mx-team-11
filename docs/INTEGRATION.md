@@ -1,147 +1,173 @@
-# CodeSentinel — Claude Code Integration (PoC)
+# CodeSentinel Claude Code Integration
 
-How a user's Claude Code session starts showing up in your admin console.
-No executable, no SDK — two native Claude Code hooks pointed at your endpoint.
+CodeSentinel watches Claude Code through HTTP hooks.
 
+```text
+Claude Code hook
+  -> POST /api/ingest
+  -> agent key maps to employee
+  -> employee maps to org + role
+  -> Risk Engine applies role rules
+  -> dashboard polls /api/sessions
 ```
-Claude Code  ──(http hook)──►  POST /api/ingest  ──►  rules engine  ──►  in-memory store
-                                                                              │
-   Admin console  ◄── poll /api/sessions every 1.5s ──────────────────────────┘
-```
 
-The session is grouped by Claude Code's own `session_id`. The user is identified
-by the **bearer key** they put in `$CODESENTINEL_KEY`. That's the whole tracking model.
-
----
-
-## 1. Run the app locally
+## Local Demo Setup
 
 ```bash
-cd platanus-hack-26-mx-team-11
 npm install
-cp .env.example .env.local      # optional; built-in dev key works without it
-npm run dev                     # http://localhost:3000
+cp .env.example .env.local
+npm run dev
 ```
 
-Open <http://localhost:3000> — the console starts empty and fills as sessions connect.
-Set `ANTHROPIC_API_KEY` in `.env.local` for real risk scoring (without it, events are
-still recorded but every score is 0).
+Open:
 
-## 2. Expose it (only needed for users on another machine)
+```text
+http://localhost:3000
+```
 
-Same machine as Claude Code? Skip this — use `http://localhost:3000/api/ingest`.
+Expected empty state:
 
-For a teammate's machine, tunnel it:
+```text
+Finance Employee -> not connected
+Support Employee -> not connected
+```
+
+## Seeded Employees
+
+| Employee | Role | Demo API key |
+|---|---|---|
+| `finance.employee@acme.test` | Finance Vibe Coder | `cs_demo_finance` |
+| `support.employee@acme.test` | Support Vibe Coder | `cs_demo_support` |
+
+## Simulate Claude Code Events
+
+Finance critical event:
 
 ```bash
-npx ngrok http 3000
-# → https://xxxx.ngrok-free.app   (use this as  https://playpen-playhouse-sustained.ngrok-free.dev below)
+npm run demo:finance
 ```
 
-## 3. Give each user their key
+Expected dashboard result:
 
-Each user gets one bearer token. For the PoC the built-in dev key is `cs_dev_local`.
-To issue real per-user keys, set `CODESENTINEL_KEYS` in `.env.local`:
-
-```json
-CODESENTINEL_KEYS={"cs_live_marisol":{"id":"u_marisol","name":"Marisol Ríos","team":"Support","email":"marisol@acme.com","orgId":"org_demo"}}
+```text
+Finance Employee -> active
+Risk score -> 95
+Flags:
+- personal_data / critical / require approval
+- unsafe_code / critical / block
 ```
 
-> Keep `orgId` as `org_demo` for now — that's the org the console reads (`app/api/sessions/route.ts`).
-
-## 4. What the user pastes
-
-**A. Add the key to their shell** (`~/.zshrc` or `~/.bashrc`):
+Support policy event:
 
 ```bash
-echo 'export CODESENTINEL_KEY="cs_dev_local"' >> ~/.zshrc
-source ~/.zshrc
+npm run demo:support
 ```
 
-**B. Add the hooks to `~/.claude/settings.json`** — replace ` https://playpen-playhouse-sustained.ngrok-free.dev` with
-`http://localhost:3000` or your ngrok URL:
+Expected dashboard result:
+
+```text
+Support Employee -> active
+Flags:
+- company_policy / medium / warn
+```
+
+Inspect raw feed:
+
+```bash
+npm run demo:sessions
+```
+
+## Real Claude Code Hook Config
+
+Use one of the seeded keys:
+
+```bash
+export CODESENTINEL_KEY="cs_demo_finance"
+```
+
+Add hooks to `~/.claude/settings.json`:
 
 ```json
 {
   "hooks": {
-    "SessionStart": [
-      { "hooks": [ { "type": "http", "url": " https://playpen-playhouse-sustained.ngrok-free.dev/api/ingest", "headers": { "Authorization": "Bearer $CODESENTINEL_KEY" }, "allowedEnvVars": ["CODESENTINEL_KEY"] } ] }
-    ],
     "UserPromptSubmit": [
-      { "hooks": [ { "type": "http", "url": " https://playpen-playhouse-sustained.ngrok-free.dev/api/ingest", "headers": { "Authorization": "Bearer $CODESENTINEL_KEY" }, "allowedEnvVars": ["CODESENTINEL_KEY"] } ] }
+      {
+        "hooks": [
+          {
+            "type": "http",
+            "url": "http://localhost:3000/api/ingest",
+            "headers": {
+              "Authorization": "Bearer $CODESENTINEL_KEY"
+            },
+            "allowedEnvVars": ["CODESENTINEL_KEY"]
+          }
+        ]
+      }
     ],
     "PreToolUse": [
-      { "matcher": "*", "hooks": [ { "type": "http", "url": " https://playpen-playhouse-sustained.ngrok-free.dev/api/ingest", "headers": { "Authorization": "Bearer $CODESENTINEL_KEY" }, "allowedEnvVars": ["CODESENTINEL_KEY"] } ] }
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "http",
+            "url": "http://localhost:3000/api/ingest",
+            "headers": {
+              "Authorization": "Bearer $CODESENTINEL_KEY"
+            },
+            "allowedEnvVars": ["CODESENTINEL_KEY"]
+          }
+        ]
+      }
     ],
     "Stop": [
-      { "hooks": [ { "type": "http", "url": " https://playpen-playhouse-sustained.ngrok-free.dev/api/ingest", "headers": { "Authorization": "Bearer $CODESENTINEL_KEY" }, "allowedEnvVars": ["CODESENTINEL_KEY"] } ] }
-    ],
-    "SessionEnd": [
-      { "hooks": [ { "type": "http", "url": " https://playpen-playhouse-sustained.ngrok-free.dev/api/ingest", "headers": { "Authorization": "Bearer $CODESENTINEL_KEY" }, "allowedEnvVars": ["CODESENTINEL_KEY"] } ] }
+      {
+        "hooks": [
+          {
+            "type": "http",
+            "url": "http://localhost:3000/api/ingest",
+            "headers": {
+              "Authorization": "Bearer $CODESENTINEL_KEY"
+            },
+            "allowedEnvVars": ["CODESENTINEL_KEY"]
+          }
+        ]
+      }
     ]
   }
 }
 ```
 
-`allowedEnvVars` is **required** — without it Claude Code won't interpolate
-`$CODESENTINEL_KEY` into the header.
+`allowedEnvVars` is required so Claude Code can interpolate `$CODESENTINEL_KEY`.
 
-## 5. Test the loop
+## Blocking Toggle
 
-In a new Claude Code session, type a deliberately risky prompt:
+Default:
 
-> *Build a tool to export all customers to a CSV I can email to the auditor.*
-
-Within a couple of seconds the console shows a new live session, the prompt on the
-timeline, and the analyst's score + any flags. The rating is contextual, not
-keyword-based: "delete all tables on prod" scores high even if the next message
-says "it's just a demo", while "hola" scores 0.
-
-Quick check without Claude Code — simulate a hook event:
-
-```bash
-curl -s http://localhost:3000/api/ingest \
-  -H "Authorization: Bearer cs_dev_local" \
-  -H "Content-Type: application/json" \
-  -d '{"session_id":"test-1","cwd":"/Users/me/refund-bot","hook_event_name":"UserPromptSubmit","prompt":"connect to the production database and dump all users"}'
+```text
+CS_BLOCK_CRITICAL=false
 ```
 
-Then refresh the console — `refund-bot` appears with a critical flag.
+This means CodeSentinel shows `block` on the dashboard but does not interrupt Claude Code.
 
----
+To demo a hard block for matching `PreToolUse` events:
 
-## Flag now, block later
-
-By default every event is **flagged** and shown — Claude Code is never interrupted.
-To have a `PreToolUse` event that trips a **critical** rule get denied (Claude refuses
-the tool call), set in `.env.local`:
-
-```bash
+```text
 CS_BLOCK_CRITICAL=true
 ```
 
-The endpoint then returns a `permissionDecision: "deny"` payload for that call.
+Then restart `npm run dev`.
 
-## Where things live
+## Hook Removal / Missing Hook Detection
 
-| Concern | File |
-|---|---|
-| Hook receiver | `app/api/ingest/route.ts` |
-| Dashboard feed | `app/api/sessions/route.ts` |
-| Claude payload → domain | `lib/ingest/process.ts`, `lib/ingest/claudeHooks.ts` |
-| Risk analyst (LLM) | `lib/risk/analyzer.ts` |
-| Analyst role / prompt | `lib/risk/systemPrompt.ts` |
-| Key → user | `lib/auth/apiKeys.ts` |
-| Store (swap for Postgres later) | `lib/store/memory.ts` |
-| Console UI | `components/dashboard/*` |
+The MVP cannot prevent a user from deleting local hooks from their own machine.
+It detects absence:
 
-## Production hardening (post-PoC)
+```text
+not connected
+active
+stale
+missing hooks suspected
+```
 
-- Swap `lib/store/memory.ts` for Postgres/Drizzle behind the same `Store` interface.
-- Replace polling (`lib/client/useSessions.ts`) with SSE or Pusher.
-- Add a deterministic pre-filter before the LLM analyst to cut cost on obvious cases.
-- Run analysis as fire-and-forget so the hook returns instantly (needs a durable store first).
-- Distribute as a Claude Code **plugin** (`hooks/hooks.json`) or push via managed
-  settings so admins can enforce it org-wide and users can't disable it.
-- Redact secrets/PII client-side before sending if data must not leave the laptop
-  (swap the `http` hook for a thin local `command` hook that strips then forwards).
+The dashboard shows expected employees even before they connect, so the CTO can see who is not reporting.
+

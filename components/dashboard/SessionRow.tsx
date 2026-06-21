@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import type { Session } from "@/lib/types";
-import { C, initials, riskColor } from "@/components/dashboard/theme";
+import { C, hhmmss, initials, riskColor } from "@/components/dashboard/theme";
 
 export function SessionRow({
   session,
@@ -42,6 +42,9 @@ export function SessionRow({
           <span style={{ color: "#D08C5E" }}>Claude Code</span>
           <span style={{ color: C.faint }}> · {session.title}</span>
         </div>
+        <div style={st.connection}>
+          {session.connectionStatus.replaceAll("_", " ")} · last seen {hhmmss(session.lastSeenAt)}
+        </div>
         <div style={st.barTrack}>
           <div style={{ ...st.barFill, width: `${session.riskScore}%`, background: col, boxShadow: `0 0 10px ${col}66` }} />
         </div>
@@ -67,6 +70,7 @@ const st: Record<string, CSSProperties> = {
   liveDot: { width: 7, height: 7, borderRadius: "50%", background: "#FF5160", display: "inline-block", marginRight: 5 },
   resolved: { fontSize: 10.5, color: C.faint, textTransform: "uppercase", letterSpacing: "0.05em" },
   meta: { fontSize: 11.5, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
+  connection: { color: C.faint, fontSize: 10.5, marginTop: 3, textTransform: "uppercase", letterSpacing: "0.04em" },
   barTrack: { height: 4, background: C.borderSoft, borderRadius: 3, marginTop: 9, overflow: "hidden" },
   barFill: { height: "100%", borderRadius: 3, transition: "width .6s ease, background .4s" },
   score: { fontSize: 18, fontWeight: 700, fontFamily: "var(--mono)", lineHeight: 1 },

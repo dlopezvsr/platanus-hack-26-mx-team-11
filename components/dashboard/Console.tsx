@@ -6,9 +6,10 @@ import { C } from "@/components/dashboard/theme";
 import { StatStrip } from "@/components/dashboard/StatStrip";
 import { SessionRow } from "@/components/dashboard/SessionRow";
 import { Replay } from "@/components/dashboard/Replay";
+import { EmployeeRow } from "@/components/dashboard/EmployeeRow";
 
 export function Console() {
-  const sessions = useSessions();
+  const { employees, sessions } = useSessions();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [clock, setClock] = useState("");
 
@@ -49,6 +50,15 @@ export function Console() {
       <div style={st.body}>
         <section style={st.left} className="cs-left">
           <div style={st.colHead}>
+            <span>Expected employees</span>
+            <span style={st.colHeadHint}>{employees.length} seeded</span>
+          </div>
+          <div style={st.employeeFeed}>
+            {employees.map((employee) => (
+              <EmployeeRow key={employee.id} employee={employee} />
+            ))}
+          </div>
+          <div style={st.colHead}>
             <span>Live sessions</span>
             <span style={st.colHeadHint}>{sessions.length} total</span>
           </div>
@@ -88,6 +98,7 @@ const st: Record<string, CSSProperties> = {
   right: { background: C.bg, display: "flex", flexDirection: "column", flex: 1 },
   colHead: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", fontSize: 12, fontWeight: 600, color: C.muted, letterSpacing: "0.05em", textTransform: "uppercase", borderBottom: `1px solid ${C.borderSoft}` },
   colHeadHint: { color: C.faint, fontWeight: 500, textTransform: "none", letterSpacing: 0 },
+  employeeFeed: { padding: 10, display: "flex", flexDirection: "column", gap: 8, borderBottom: `1px solid ${C.borderSoft}` },
   feed: { padding: 10, display: "flex", flexDirection: "column", gap: 8, overflowY: "auto" },
   empty: { padding: 40, color: C.faint, fontSize: 14 },
 };

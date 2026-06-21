@@ -5,7 +5,10 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "demo:finance": "bash scripts/demo-finance-risk.sh",
+    "demo:support": "bash scripts/demo-support-risk.sh",
+    "demo:sessions": "curl -s http://localhost:3000/api/sessions"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.40.1",
