@@ -22,7 +22,7 @@ export async function listSessionsForViewer(): Promise<Session[]> {
   const { data, error } = await supabase
     .from("sessions")
     .select(
-      `id, member_name, team, title, tool, status, risk_score, started_at, ended_at,
+      `id, member_name, team, title, tool, status, risk_score, started_at,
        events ( id, type, who, content, summary, risk_score, created_at,
          risk_flags ( id, category, severity, title, explanation, suggested_fix, confidence ) )`
     )
@@ -34,9 +34,6 @@ export async function listSessionsForViewer(): Promise<Session[]> {
 
   return data.map(mapSession);
 }
-
-/** A session stays "alive" in the console for at least this long after it starts. */
-const MIN_ALIVE_MS = 60_000;
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 function mapSession(row: any): Session {
@@ -69,17 +66,9 @@ function mapSession(row: any): Session {
     team: row.team ?? "",
     title: row.title ?? "claude session",
     tool: row.tool ?? "claude",
-    status: effectiveStatus(row),
+    status: (row.status as Session["status"]) ?? "active",
     riskScore: row.risk_score ?? 0,
     startedAt: row.started_at,
     events,
   };
-}
-
-/** Keep a session "active" until it has been alive for at least MIN_ALIVE_MS. */
-function effectiveStatus(row: any): Session["status"] {
-  const status = (row.status as Session["status"]) ?? "active";
-  if (status !== "ended" || !row.started_at) return status;
-  const aliveFor = Date.now() - new Date(row.started_at).getTime();
-  return aliveFor < MIN_ALIVE_MS ? "active" : "ended";
 }

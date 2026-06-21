@@ -8,12 +8,7 @@ import type { Session, SessionEvent } from "@/lib/types";
 interface Entry {
   orgId: string;
   session: Session;
-  /** When a Stop/SessionEnd arrived; the session still shows live until MIN_ALIVE_MS. */
-  endRequestedAt?: number;
 }
-
-/** A session stays "alive" in the console for at least this long after it starts. */
-const MIN_ALIVE_MS = 60_000;
 
 // Anchor the store on globalThis so it survives module re-evaluation / HMR in
 // `next dev` — otherwise each request would see a fresh, empty store.
@@ -65,30 +60,14 @@ export function appendEvent(orgId: string, sessionId: string, event: SessionEven
 
 export function endSession(sessionId: string): void {
   const entry = store.get(sessionId);
-  if (!entry) return;
-  // Don't end a session that hasn't been alive for the minimum window yet —
-  // record the request and let listSessions resolve the effective status.
-  entry.endRequestedAt = Date.now();
-  const aliveFor = Date.now() - new Date(entry.session.startedAt).getTime();
-  if (aliveFor >= MIN_ALIVE_MS) entry.session.status = "ended";
+  if (entry) entry.session.status = "ended";
 }
 
 /** All sessions for an org, newest first. Pass undefined to list everything. */
 export function listSessions(orgId?: string): Session[] {
-  const now = Date.now();
   return [...store.values()]
     .filter((e) => (orgId ? e.orgId === orgId : true))
-    .map((e) => {
-      // Honour the minimum-alive window: flip to "ended" once it elapses.
-      if (
-        e.session.status === "active" &&
-        e.endRequestedAt !== undefined &&
-        now - new Date(e.session.startedAt).getTime() >= MIN_ALIVE_MS
-      ) {
-        e.session.status = "ended";
-      }
-      return e.session;
-    })
+    .map((e) => e.session)
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
 }
 
