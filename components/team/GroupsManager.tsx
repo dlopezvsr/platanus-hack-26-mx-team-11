@@ -1,10 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition, type CSSProperties } from "react";
-import { Brand } from "@/components/ui/Brand";
+import { useRef, useState, useTransition, type CSSProperties } from "react";
 import { C } from "@/components/dashboard/theme";
+import { DashboardNav } from "@/components/dashboard/DashboardNav";
 import { PolicyLibrary, severityColor } from "@/components/policy/PolicyLibrary";
 import { policyById } from "@/lib/policy/catalog";
 import type { GroupView } from "@/lib/repo/groups";
@@ -37,47 +36,63 @@ export function GroupsManager({
 
   const run = (fn: () => Promise<unknown>) => start(async () => { await fn(); router.refresh(); });
 
-  // Selected ids for whichever scope the library is open on (derived from props).
-  const libSelected =
+  // ── Policy library: per-id mutation tracking ──────────────────────────────────
+  // Only the policy currently being added/removed is disabled — others stay live.
+  // `optimistic` mirrors the open target's selection so the modal updates instantly;
+  // writes are serialized through `chain` so rapid clicks each send the full
+  // cumulative set instead of racing on a stale props snapshot.
+  const [acting, setActing] = useState<Set<string>>(new Set());
+  const [optimistic, setOptimistic] = useState<string[] | null>(null);
+  const chain = useRef<Promise<unknown>>(Promise.resolve());
+
+  function openLibrary(target: Exclude<LibraryTarget, null>) {
+    setOptimistic(null);
+    setLibrary(target);
+  }
+  function closeLibrary() {
+    setLibrary(null);
+    setOptimistic(null);
+  }
+
+  // Selected ids for whichever scope the library is open on (optimistic, else props).
+  const propSelected =
     library?.scope === "org"
       ? orgPolicyIds
       : library?.scope === "group"
         ? groups.find((g) => g.id === library.groupId)?.policyIds ?? []
         : [];
+  const libSelected = optimistic ?? propSelected;
+
+  function commit(id: string, next: string[]) {
+    if (!library) return;
+    setOptimistic(next);
+    setActing((prev) => new Set(prev).add(id));
+    const write = library.scope === "org"
+      ? () => setOrgPoliciesAction(next)
+      : () => setGroupPoliciesAction(library.groupId, next);
+    chain.current = chain.current
+      .catch(() => {})
+      .then(write)
+      .then(() => router.refresh())
+      .finally(() => setActing((prev) => { const n = new Set(prev); n.delete(id); return n; }));
+  }
 
   function pickPolicy(id: string) {
-    if (!library) return;
-    if (library.scope === "org") run(() => setOrgPoliciesAction([...orgPolicyIds, id]));
-    else {
-      const g = groups.find((x) => x.id === library.groupId);
-      if (g) run(() => setGroupPoliciesAction(g.id, [...g.policyIds, id]));
-    }
+    if (acting.has(id) || libSelected.includes(id)) return;
+    commit(id, [...libSelected, id]);
   }
   function removePolicy(id: string) {
-    if (!library) return;
-    if (library.scope === "org") run(() => setOrgPoliciesAction(orgPolicyIds.filter((x) => x !== id)));
-    else {
-      const g = groups.find((x) => x.id === library.groupId);
-      if (g) run(() => setGroupPoliciesAction(g.id, g.policyIds.filter((x) => x !== id)));
-    }
+    if (acting.has(id)) return;
+    commit(id, libSelected.filter((x) => x !== id));
   }
 
   return (
     <div style={st.root}>
-      <header style={st.header}>
-        <div style={st.brandWrap}>
-          <Brand variant="dark" size={28} />
-          <div>
-            <div style={st.brand}>Groups</div>
-            <div style={st.sub}>Create your own groups and attach policies from the library.</div>
-          </div>
-        </div>
-        <div style={st.nav}>
-          {pending && <span style={st.saving}><Spinner /> Saving…</span>}
-          <Link href="/dashboard" style={st.navLink}>← Console</Link>
-          <Link href="/dashboard/team" style={st.navLink}>Team</Link>
-        </div>
-      </header>
+      <DashboardNav
+        title="Groups"
+        subtitle="Create your own groups and attach policies from the library."
+        right={pending ? <span style={st.saving}><Spinner /> Saving…</span> : undefined}
+      />
 
       <div style={st.banner}>
         {configured
@@ -90,7 +105,7 @@ export function GroupsManager({
         <section style={st.card}>
           <div style={st.cardHead}>
             <span>Organization policies</span>
-            <button onClick={() => setLibrary({ scope: "org" })} disabled={pending} style={{ ...st.primaryBtn, opacity: pending ? 0.55 : 1 }}>Edit org policies</button>
+            <button onClick={() => openLibrary({ scope: "org" })} disabled={pending} style={{ ...st.primaryBtn, opacity: pending ? 0.55 : 1 }}>Edit org policies</button>
           </div>
           <div style={st.cardHint}>Applied to everyone — current and future members.</div>
           <div style={st.chips}>
@@ -113,7 +128,7 @@ export function GroupsManager({
               orgPolicyIds={orgPolicyIds}
               members={members}
               busy={pending}
-              onAddPolicy={() => setLibrary({ scope: "group", groupId: g.id })}
+              onAddPolicy={() => openLibrary({ scope: "group", groupId: g.id })}
               onRemovePolicy={(id) => run(() => setGroupPoliciesAction(g.id, g.policyIds.filter((x) => x !== id)))}
               onToggleMember={(memberId) => {
                 const next = g.memberIds.includes(memberId)
@@ -132,10 +147,10 @@ export function GroupsManager({
         <PolicyLibrary
           title={library.scope === "org" ? "Organization policies" : `Group policies · ${groups.find((g) => g.id === library.groupId)?.name ?? ""}`}
           selectedIds={libSelected}
-          busy={pending}
+          actingIds={[...acting]}
           onPick={pickPolicy}
           onRemove={removePolicy}
-          onClose={() => setLibrary(null)}
+          onClose={closeLibrary}
         />
       )}
     </div>
@@ -293,13 +308,7 @@ const cst: Record<string, CSSProperties> = {
 
 const st: Record<string, CSSProperties> = {
   root: { background: C.bg, color: C.text, minHeight: "100vh", fontFamily: "var(--ui)" },
-  header: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderBottom: `1px solid ${C.border}`, background: `linear-gradient(180deg, ${C.panel}, ${C.panel2})`, gap: 14, flexWrap: "wrap" },
-  brandWrap: { display: "flex", alignItems: "center", gap: 14 },
-  brand: { fontSize: 15, fontWeight: 700 },
-  sub: { fontSize: 12, color: C.muted, marginTop: 3 },
-  nav: { display: "flex", gap: 16, alignItems: "center" },
   saving: { display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12, color: C.muted, fontWeight: 600 },
-  navLink: { color: C.muted, textDecoration: "none", fontSize: 13, fontWeight: 600 },
   banner: { margin: "14px 20px 0", background: C.panel2, border: `1px solid ${C.borderSoft}`, color: C.muted, borderRadius: 10, padding: "10px 14px", fontSize: 12.5, lineHeight: 1.5 },
   body: { maxWidth: 960, margin: "0 auto", padding: "18px 20px 60px", display: "flex", flexDirection: "column", gap: 18 },
 

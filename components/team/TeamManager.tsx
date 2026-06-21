@@ -3,11 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useMemo, useState, useTransition, type CSSProperties } from "react";
-import { Brand } from "@/components/ui/Brand";
 import { C } from "@/components/dashboard/theme";
+import { DashboardNav } from "@/components/dashboard/DashboardNav";
 import type { MemberView } from "@/lib/repo/members";
 import type { GroupView } from "@/lib/repo/groups";
-import { ROLES, roleById } from "@/lib/policy/roles";
 import { POLICIES } from "@/lib/policy/catalog";
 import { buildSettings, buildGuardScript, resolvePolicies } from "@/lib/policy/generate";
 import { addMember, regenerateToken, removeMember, setMember, type TeamActionState } from "@/app/dashboard/team/actions";
@@ -41,19 +40,10 @@ export function TeamManager({
 
   return (
     <div style={st.root}>
-      <header style={st.header}>
-        <div style={st.brandWrap}>
-          <Brand variant="dark" size={28} />
-          <div>
-            <div style={st.brand}>Team</div>
-            <div style={st.sub}>Add members, assign a role &amp; policies, hand them their setup.</div>
-          </div>
-        </div>
-        <div style={{ display: "flex", gap: 16 }}>
-          <Link href="/dashboard/groups" style={st.navLink}>Groups</Link>
-          <Link href="/dashboard" style={st.navLink}>← Console</Link>
-        </div>
-      </header>
+      <DashboardNav
+        title="Team"
+        subtitle="Add members, assign groups & policies, hand them their setup."
+      />
 
       {!configured && (
         <div style={st.banner}>
@@ -90,6 +80,7 @@ export function TeamManager({
             <MemberRow
               key={m.id}
               member={m}
+              groupNames={groups.filter((g) => g.memberIds.includes(m.id)).map((g) => g.name)}
               hasSecret={Boolean(secrets[m.id])}
               onOnboard={() => setOnboardingFor(m.id)}
               onSecret={(t) => setSecrets((s) => ({ ...s, [m.id]: t }))}
@@ -133,11 +124,13 @@ function Spinner() {
 
 function MemberRow({
   member,
+  groupNames,
   hasSecret,
   onOnboard,
   onSecret,
 }: {
   member: MemberView;
+  groupNames: string[];
   hasSecret: boolean;
   onOnboard: () => void;
   onSecret: (token: string) => void;
@@ -146,15 +139,6 @@ function MemberRow({
   const [pending, start] = useTransition();
   const [editing, setEditing] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set(member.policyIds));
-
-  function changeRole(roleId: string) {
-    const policyIds = roleById(roleId)?.policyIds ?? [];
-    setSelected(new Set(policyIds));
-    start(async () => {
-      await setMember(member.id, roleId, policyIds);
-      router.refresh();
-    });
-  }
 
   function savePolicies() {
     start(async () => {
@@ -187,11 +171,8 @@ function MemberRow({
       <div style={st.rowMain}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={st.name}>{member.fullName}</div>
-          <div style={st.meta}>{member.email}{member.team ? ` · ${member.team}` : ""}</div>
+          <div style={st.meta}>{member.email}{groupNames.length ? ` · ${groupNames.join(", ")}` : ""}</div>
         </div>
-        <select value={member.roleId} onChange={(e) => changeRole(e.target.value)} disabled={pending} style={st.roleSel}>
-          {ROLES.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
-        </select>
         <div style={st.tokenChip}>
           {member.tokenActive ? `${member.tokenPrefix}… active` : "no token"}
         </div>
@@ -292,11 +273,6 @@ function Onboarding({
 
 const st: Record<string, CSSProperties> = {
   root: { background: C.bg, color: C.text, minHeight: "100vh", fontFamily: "var(--ui)" },
-  header: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderBottom: `1px solid ${C.border}`, background: `linear-gradient(180deg, ${C.panel}, ${C.panel2})`, gap: 14, flexWrap: "wrap" },
-  brandWrap: { display: "flex", alignItems: "center", gap: 14 },
-  brand: { fontSize: 15, fontWeight: 700 },
-  sub: { fontSize: 12, color: C.muted, marginTop: 3 },
-  navLink: { color: C.muted, textDecoration: "none", fontSize: 13, fontWeight: 600 },
   banner: { margin: "14px 20px 0", background: "#2A2410", border: "1px solid #5C4E1E", color: "#FFD68A", borderRadius: 10, padding: "10px 14px", fontSize: 13 },
   body: { maxWidth: 920, margin: "0 auto", padding: "22px 20px 60px", display: "flex", flexDirection: "column", gap: 22 },
 
@@ -315,7 +291,6 @@ const st: Record<string, CSSProperties> = {
   rowMain: { display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" },
   name: { fontSize: 14, fontWeight: 600 },
   meta: { fontSize: 12, color: C.muted, marginTop: 2 },
-  roleSel: { background: C.bg, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 9px", fontSize: 12.5, fontFamily: "var(--ui)" },
   tokenChip: { fontSize: 11, color: C.faint, fontFamily: "var(--mono)", border: `1px solid ${C.borderSoft}`, borderRadius: 20, padding: "3px 9px", whiteSpace: "nowrap" },
   rowBtns: { display: "flex", gap: 7 },
   ghostBtn: { background: "transparent", color: C.muted, border: `1px solid ${C.border}`, borderRadius: 7, padding: "6px 11px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "var(--ui)" },

@@ -1,10 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useSessions } from "@/lib/client/useSessions";
-import { Brand } from "@/components/ui/Brand";
 import { C } from "@/components/dashboard/theme";
+import { DashboardNav } from "@/components/dashboard/DashboardNav";
 import { StatStrip } from "@/components/dashboard/StatStrip";
 import { SessionRow } from "@/components/dashboard/SessionRow";
 import { Replay } from "@/components/dashboard/Replay";
@@ -35,27 +34,26 @@ export function Console({ viewer }: { viewer?: ConsoleViewer | null }) {
 
   return (
     <div style={st.root}>
-      <header style={st.header}>
-        <div style={st.brandWrap}>
-          <Brand variant="dark" size={30} pulse />
-          <span style={st.brandSub}>Security console</span>
-        </div>
-        <div style={st.headRight}>
-          <Link href="/dashboard/groups" style={st.navLink}>Groups</Link>
-          <Link href="/dashboard/team" style={st.navLink}>Team</Link>
-          <Link href="/policies" style={st.navLink}>Policy Studio</Link>
-          <div style={st.clock}>
-            <span className="cs-live" style={st.liveDot} />
-            <span style={{ fontFamily: "var(--mono)" }}>{clock}</span>
-          </div>
-          {viewer && (
-            <form action={logout} style={st.account}>
-              <span style={st.accountName}>{viewer.name}{viewer.orgName ? ` · ${viewer.orgName}` : ""}</span>
-              <button type="submit" style={st.signOut}>Sign out</button>
-            </form>
-          )}
-        </div>
-      </header>
+      <DashboardNav
+        title="Console"
+        badge="Security console"
+        brandSize={30}
+        brandPulse
+        right={
+          <>
+            <div style={st.clock}>
+              <span className="cs-live" style={st.liveDot} />
+              <span style={{ fontFamily: "var(--mono)" }}>{clock}</span>
+            </div>
+            {viewer && (
+              <form action={logout} style={st.account}>
+                <span style={st.accountName}>{viewer.name}{viewer.orgName ? ` · ${viewer.orgName}` : ""}</span>
+                <button type="submit" style={st.signOut}>Sign out</button>
+              </form>
+            )}
+          </>
+        }
+      />
 
       <StatStrip sessions={sessions} />
 
@@ -89,11 +87,6 @@ export function Console({ viewer }: { viewer?: ConsoleViewer | null }) {
 
 const st: Record<string, CSSProperties> = {
   root: { background: C.bg, color: C.text, minHeight: "100vh", fontFamily: "var(--ui)", border: `1px solid ${C.border}` },
-  header: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderBottom: `1px solid ${C.border}`, background: `linear-gradient(180deg, ${C.panel}, ${C.panel2})`, gap: 14, flexWrap: "wrap" },
-  brandWrap: { display: "flex", alignItems: "center", gap: 12 },
-  brandSub: { fontSize: 10.5, color: C.muted, letterSpacing: "0.06em", textTransform: "uppercase", border: `1px solid ${C.borderSoft}`, borderRadius: 20, padding: "3px 9px" },
-  headRight: { display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" },
-  navLink: { color: C.muted, textDecoration: "none", fontSize: 13, fontWeight: 600 },
   clock: { fontSize: 12.5, color: C.muted, display: "flex", alignItems: "center", gap: 7 },
   account: { display: "flex", alignItems: "center", gap: 10 },
   accountName: { fontSize: 12, color: C.faint },

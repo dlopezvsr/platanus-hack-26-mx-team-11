@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import { C } from "@/components/dashboard/theme";
 import { POLICIES, type PolicyCategory, type PolicySeverity, type PolicySource } from "@/lib/policy/catalog";
 
@@ -17,14 +17,15 @@ export function severityColor(sev: PolicySeverity): string {
 export function PolicyLibrary({
   title,
   selectedIds,
-  busy = false,
+  actingIds = [],
   onPick,
   onRemove,
   onClose,
 }: {
   title: string;
   selectedIds: string[];
-  busy?: boolean;
+  /** Ids whose add/remove is in flight — only these rows are disabled. */
+  actingIds?: string[];
   onPick: (id: string) => void;
   onRemove: (id: string) => void;
   onClose: () => void;
@@ -33,13 +34,8 @@ export function PolicyLibrary({
   const [cat, setCat] = useState<(typeof CATEGORIES)[number]>("all");
   const [sev, setSev] = useState<(typeof SEVERITIES)[number]>("all");
   const [src, setSrc] = useState<(typeof SOURCES)[number]>("all");
-  const [actingId, setActingId] = useState<string | null>(null);
   const selected = new Set(selectedIds);
-
-  // Clear the per-row spinner once the parent mutation settles.
-  useEffect(() => {
-    if (!busy) setActingId(null);
-  }, [busy]);
+  const acting = new Set(actingIds);
 
   const results = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -80,7 +76,7 @@ export function PolicyLibrary({
           {results.map((p) => {
             const on = selected.has(p.id);
             const col = severityColor(p.severity);
-            const acting = actingId === p.id && busy;
+            const isActing = acting.has(p.id);
             return (
               <div key={p.id} style={{ ...st.row, borderColor: on ? col : C.borderSoft }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -93,19 +89,19 @@ export function PolicyLibrary({
                 </div>
                 {on ? (
                   <button
-                    onClick={() => { setActingId(p.id); onRemove(p.id); }}
-                    disabled={busy}
-                    style={{ ...st.removeBtn, opacity: busy ? 0.55 : 1 }}
+                    onClick={() => onRemove(p.id)}
+                    disabled={isActing}
+                    style={{ ...st.removeBtn, opacity: isActing ? 0.55 : 1 }}
                   >
-                    {acting ? <Spinner color="#FF8088" /> : "Remove"}
+                    {isActing ? <Spinner color="#FF8088" /> : "Remove"}
                   </button>
                 ) : (
                   <button
-                    onClick={() => { setActingId(p.id); onPick(p.id); }}
-                    disabled={busy}
-                    style={{ ...st.addBtn, background: col, opacity: busy ? 0.55 : 1 }}
+                    onClick={() => onPick(p.id)}
+                    disabled={isActing}
+                    style={{ ...st.addBtn, background: col, opacity: isActing ? 0.55 : 1 }}
                   >
-                    {acting ? <Spinner color="#06231F" /> : "Add"}
+                    {isActing ? <Spinner color="#06231F" /> : "Add"}
                   </button>
                 )}
               </div>
