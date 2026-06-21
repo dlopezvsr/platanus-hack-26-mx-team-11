@@ -32,7 +32,7 @@ export function GroupsManager({
   configured: boolean;
 }) {
   const router = useRouter();
-  const [, start] = useTransition();
+  const [pending, start] = useTransition();
   const [library, setLibrary] = useState<LibraryTarget>(null);
 
   const run = (fn: () => Promise<unknown>) => start(async () => { await fn(); router.refresh(); });
@@ -73,6 +73,7 @@ export function GroupsManager({
           </div>
         </div>
         <div style={st.nav}>
+          {pending && <span style={st.saving}><Spinner /> Saving…</span>}
           <Link href="/dashboard" style={st.navLink}>← Console</Link>
           <Link href="/dashboard/team" style={st.navLink}>Team</Link>
         </div>
@@ -89,7 +90,7 @@ export function GroupsManager({
         <section style={st.card}>
           <div style={st.cardHead}>
             <span>Organization policies</span>
-            <button onClick={() => setLibrary({ scope: "org" })} style={st.primaryBtn}>Edit org policies</button>
+            <button onClick={() => setLibrary({ scope: "org" })} disabled={pending} style={{ ...st.primaryBtn, opacity: pending ? 0.55 : 1 }}>Edit org policies</button>
           </div>
           <div style={st.cardHint}>Applied to everyone — current and future members.</div>
           <div style={st.chips}>
@@ -99,7 +100,7 @@ export function GroupsManager({
         </section>
 
         {/* Create group */}
-        <CreateGroup onCreate={(name, desc, policyIds) => run(() => createGroupAction(name, desc, policyIds))} />
+        <CreateGroup busy={pending} onCreate={(name, desc, policyIds) => run(() => createGroupAction(name, desc, policyIds))} />
 
         {/* Groups */}
         <section style={st.list}>
@@ -111,6 +112,7 @@ export function GroupsManager({
               group={g}
               orgPolicyIds={orgPolicyIds}
               members={members}
+              busy={pending}
               onAddPolicy={() => setLibrary({ scope: "group", groupId: g.id })}
               onRemovePolicy={(id) => run(() => setGroupPoliciesAction(g.id, g.policyIds.filter((x) => x !== id)))}
               onToggleMember={(memberId) => {
@@ -130,12 +132,33 @@ export function GroupsManager({
         <PolicyLibrary
           title={library.scope === "org" ? "Organization policies" : `Group policies · ${groups.find((g) => g.id === library.groupId)?.name ?? ""}`}
           selectedIds={libSelected}
+          busy={pending}
           onPick={pickPolicy}
           onRemove={removePolicy}
           onClose={() => setLibrary(null)}
         />
       )}
     </div>
+  );
+}
+
+function Spinner() {
+  return (
+    <span
+      aria-hidden
+      style={{
+        display: "inline-block",
+        width: 12,
+        height: 12,
+        border: `2px solid ${C.borderSoft}`,
+        borderTopColor: C.accent,
+        borderRadius: "50%",
+        animation: "cs-spin 0.6s linear infinite",
+        verticalAlign: "-1px",
+      }}
+    >
+      <style>{"@keyframes cs-spin{to{transform:rotate(360deg)}}"}</style>
+    </span>
   );
 }
 
@@ -152,7 +175,7 @@ function PolicyChip({ id, onRemove }: { id: string; onRemove?: () => void }) {
   );
 }
 
-function CreateGroup({ onCreate }: { onCreate: (name: string, desc: string, policyIds: string[]) => void }) {
+function CreateGroup({ busy, onCreate }: { busy: boolean; onCreate: (name: string, desc: string, policyIds: string[]) => void }) {
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
 
@@ -163,13 +186,17 @@ function CreateGroup({ onCreate }: { onCreate: (name: string, desc: string, poli
     setDesc("");
   }
 
+  const disabled = !name.trim() || busy;
+
   return (
     <section style={st.card}>
       <div style={st.cardHead}><span>Create a group</span></div>
       <div style={st.createForm}>
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Group name (e.g. Sales Ops)" style={st.input} />
-        <input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Description (optional)" style={st.input} />
-        <button onClick={submit} disabled={!name.trim()} style={{ ...st.addBtn, opacity: name.trim() ? 1 : 0.5 }}>Create group</button>
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Group name (e.g. Sales Ops)" disabled={busy} style={st.input} />
+        <input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Description (optional)" disabled={busy} style={st.input} />
+        <button onClick={submit} disabled={disabled} style={{ ...st.addBtn, opacity: disabled ? 0.5 : 1 }}>
+          {busy ? <><Spinner /> Creating…</> : "Create group"}
+        </button>
       </div>
       <div style={st.cardHint}>Attach policies from the library after creating the group.</div>
     </section>
@@ -180,6 +207,7 @@ function GroupCard({
   group,
   orgPolicyIds,
   members,
+  busy,
   onAddPolicy,
   onRemovePolicy,
   onToggleMember,
@@ -189,6 +217,7 @@ function GroupCard({
   group: GroupView;
   orgPolicyIds: string[];
   members: MemberView[];
+  busy: boolean;
   onAddPolicy: () => void;
   onRemovePolicy: (id: string) => void;
   onToggleMember: (memberId: string) => void;
@@ -207,7 +236,7 @@ function GroupCard({
           <div style={{ flex: 1, display: "flex", gap: 8, flexWrap: "wrap" }}>
             <input value={name} onChange={(e) => setName(e.target.value)} style={st.input} />
             <input value={desc} onChange={(e) => setDesc(e.target.value)} style={st.input} />
-            <button onClick={() => { onRename(name, desc); setEditing(false); }} style={st.saveBtn}>Save</button>
+            <button onClick={() => { onRename(name, desc); setEditing(false); }} disabled={busy} style={{ ...st.saveBtn, opacity: busy ? 0.55 : 1 }}>Save</button>
           </div>
         ) : (
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -218,7 +247,7 @@ function GroupCard({
         <span style={st.countChip}>{group.memberIds.length} member{group.memberIds.length === 1 ? "" : "s"}</span>
         <div style={st.groupBtns}>
           <button onClick={() => setEditing((v) => !v)} style={st.ghostBtn}>{editing ? "Close" : "Rename"}</button>
-          <button onClick={onDelete} style={st.dangerBtn}>Delete</button>
+          <button onClick={onDelete} disabled={busy} style={{ ...st.dangerBtn, opacity: busy ? 0.55 : 1 }}>Delete</button>
         </div>
       </div>
 
@@ -232,7 +261,7 @@ function GroupCard({
       <div style={st.chips}>
         {group.policyIds.length === 0 && <span style={st.empty}>No group policies yet.</span>}
         {group.policyIds.map((id) => <PolicyChip key={id} id={id} onRemove={() => onRemovePolicy(id)} />)}
-        <button onClick={onAddPolicy} style={st.addPolicyBtn}>+ Add from library</button>
+        <button onClick={onAddPolicy} disabled={busy} style={{ ...st.addPolicyBtn, opacity: busy ? 0.55 : 1 }}>+ Add from library</button>
       </div>
 
       <div style={st.subHead}>Members</div>
@@ -244,7 +273,8 @@ function GroupCard({
             <button
               key={m.id}
               onClick={() => onToggleMember(m.id)}
-              style={{ ...st.memberChip, borderColor: on ? C.accent : C.borderSoft, color: on ? C.text : C.muted }}
+              disabled={busy}
+              style={{ ...st.memberChip, borderColor: on ? C.accent : C.borderSoft, color: on ? C.text : C.muted, opacity: busy ? 0.6 : 1 }}
             >
               {on ? "✓ " : ""}{m.fullName}{m.team ? ` · ${m.team}` : ""}
             </button>
@@ -267,7 +297,8 @@ const st: Record<string, CSSProperties> = {
   brandWrap: { display: "flex", alignItems: "center", gap: 14 },
   brand: { fontSize: 15, fontWeight: 700 },
   sub: { fontSize: 12, color: C.muted, marginTop: 3 },
-  nav: { display: "flex", gap: 16 },
+  nav: { display: "flex", gap: 16, alignItems: "center" },
+  saving: { display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12, color: C.muted, fontWeight: 600 },
   navLink: { color: C.muted, textDecoration: "none", fontSize: 13, fontWeight: 600 },
   banner: { margin: "14px 20px 0", background: C.panel2, border: `1px solid ${C.borderSoft}`, color: C.muted, borderRadius: 10, padding: "10px 14px", fontSize: 12.5, lineHeight: 1.5 },
   body: { maxWidth: 960, margin: "0 auto", padding: "18px 20px 60px", display: "flex", flexDirection: "column", gap: 18 },

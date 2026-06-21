@@ -70,7 +70,7 @@ export function TeamManager({
               {ROLES.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
             </select>
             <button type="submit" disabled={adding || !configured} style={{ ...st.addBtn, opacity: adding || !configured ? 0.55 : 1 }}>
-              {adding ? "Adding…" : "Add member"}
+              {adding ? <><Spinner /> Adding…</> : "Add member"}
             </button>
           </form>
           {state.error && <div style={st.err}>{state.error}</div>}
@@ -102,6 +102,26 @@ export function TeamManager({
         />
       )}
     </div>
+  );
+}
+
+function Spinner() {
+  return (
+    <span
+      aria-hidden
+      style={{
+        display: "inline-block",
+        width: 12,
+        height: 12,
+        border: `2px solid ${C.borderSoft}`,
+        borderTopColor: C.accent,
+        borderRadius: "50%",
+        animation: "cs-spin 0.6s linear infinite",
+        verticalAlign: "-1px",
+      }}
+    >
+      <style>{"@keyframes cs-spin{to{transform:rotate(360deg)}}"}</style>
+    </span>
   );
 }
 
@@ -170,9 +190,9 @@ function MemberRow({
           {member.tokenActive ? `${member.tokenPrefix}… active` : "no token"}
         </div>
         <div style={st.rowBtns}>
-          <button onClick={() => setEditing((v) => !v)} style={st.ghostBtn}>{editing ? "Close" : `Policies · ${member.policyIds.length}`}</button>
-          <button onClick={getInstall} disabled={pending} style={st.primaryBtn}>{hasSecret ? "Show setup" : "Get setup"}</button>
-          <button onClick={remove} disabled={pending} style={st.dangerBtn}>Remove</button>
+          <button onClick={() => setEditing((v) => !v)} disabled={pending} style={{ ...st.ghostBtn, opacity: pending ? 0.55 : 1 }}>{editing ? "Close" : `Policies · ${member.policyIds.length}`}</button>
+          <button onClick={getInstall} disabled={pending} style={{ ...st.primaryBtn, opacity: pending ? 0.55 : 1 }}>{pending ? <><Spinner /> …</> : hasSecret ? "Show setup" : "Get setup"}</button>
+          <button onClick={remove} disabled={pending} style={{ ...st.dangerBtn, opacity: pending ? 0.55 : 1 }}>Remove</button>
         </div>
       </div>
 
@@ -190,7 +210,7 @@ function MemberRow({
               </button>
             );
           })}
-          <button onClick={savePolicies} disabled={pending} style={st.saveBtn}>Save policies</button>
+          <button onClick={savePolicies} disabled={pending} style={{ ...st.saveBtn, opacity: pending ? 0.55 : 1 }}>{pending ? <><Spinner /> Saving…</> : "Save policies"}</button>
         </div>
       )}
     </div>
