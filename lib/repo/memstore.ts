@@ -71,23 +71,25 @@ export function listSessions(orgId?: string): Session[] {
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
 }
 
-// ── Seed one illustrative session so the demo console has life ────────────────
+// ── Seed two illustrative sessions so the demo console shows both states ──────
 export function ensureSeed(): void {
   if (g.__csSeeded) return;
   g.__csSeeded = true;
-  const id = "seed-demo-001";
+
+  // Session 1 — active: flagged prompt, currently in progress.
+  const id1 = "seed-demo-001";
   upsertSession("demo", {
-    id,
+    id: id1,
     user: "Ana (Marketing)",
     team: "Marketing",
     title: "Customer insights dashboard",
   });
-  appendEvent("demo", id, {
+  appendEvent("demo", id1, {
     id: "seed-e1",
     type: "prompt",
     who: "Ana (Marketing)",
     content: "Build a dashboard from the production CRM and export all customer emails to CSV.",
-    summary: "Corrected: switched to staging data, removed PII export.",
+    summary: "Corrected — switched to staging data, PII export removed.",
     riskScore: 82,
     timestamp: new Date(Date.now() - 1000 * 60 * 6).toISOString(),
     flags: [
@@ -95,20 +97,69 @@ export function ensureSeed(): void {
         id: "seed-f1",
         category: "policy",
         severity: "critical",
-        title: "Production access + PII export",
+        title: "Acceso a producción + exportación de PII",
         explanation:
-          "The request connects to the production CRM and exports identifiable customer emails — two critical policies.",
-        suggestedFix: "Use anonymized/staging data and show aggregated metrics; do not export PII.",
+          "La solicitud conecta al CRM productivo y exporta correos identificables de clientes — dos políticas críticas activadas.",
+        suggestedFix: "Usa datos anonimizados de staging y muestra métricas agregadas; no exportes PII.",
       },
     ],
   });
-  appendEvent("demo", id, {
+  appendEvent("demo", id1, {
     id: "seed-e2",
+    type: "tool_call",
+    who: "Claude Code",
+    content: "Read file_path=\"src/db/client.ts\"",
+    summary: "Allowed.",
+    riskScore: 4,
+    timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
+    flags: [],
+  });
+  appendEvent("demo", id1, {
+    id: "seed-e3",
     type: "response",
     who: "Claude Code",
     content: "Scaffolding an internal dashboard on staging data with aggregated metrics only.",
     riskScore: 8,
-    timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
+    timestamp: new Date(Date.now() - 1000 * 60 * 4).toISOString(),
     flags: [],
   });
+
+  // Session 2 — ended: clean session, no flags, completed normally.
+  const id2 = "seed-demo-002";
+  upsertSession("demo", {
+    id: id2,
+    user: "Bruno (Finance)",
+    team: "Finance",
+    title: "Q2 budget reconciliation script",
+  });
+  appendEvent("demo", id2, {
+    id: "seed-e4",
+    type: "prompt",
+    who: "Bruno (Finance)",
+    content: "Write a script to reconcile the Q2 budget spreadsheet with the accounting system export.",
+    summary: "Allowed.",
+    riskScore: 10,
+    timestamp: new Date(Date.now() - 1000 * 60 * 32).toISOString(),
+    flags: [],
+  });
+  appendEvent("demo", id2, {
+    id: "seed-e5",
+    type: "tool_call",
+    who: "Claude Code",
+    content: "Write file_path=\"scripts/reconcile_q2.py\"",
+    summary: "Allowed.",
+    riskScore: 5,
+    timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+    flags: [],
+  });
+  appendEvent("demo", id2, {
+    id: "seed-e6",
+    type: "response",
+    who: "Claude Code",
+    content: "Script created at scripts/reconcile_q2.py. Reads from budget.xlsx and accounting_export.csv, outputs a diff report.",
+    riskScore: 5,
+    timestamp: new Date(Date.now() - 1000 * 60 * 29).toISOString(),
+    flags: [],
+  });
+  endSession(id2);
 }
